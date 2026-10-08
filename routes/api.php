@@ -6,6 +6,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Routes
+    |--------------------------------------------------------------------------
+    */
+
     Route::prefix('auth')->group(function () {
 
         Route::post(
@@ -28,8 +34,7 @@ Route::prefix('v1')->group(function () {
             [AuthController::class, 'login']
         )->middleware('throttle:10,1');
 
-
-         /*
+        /*
         |--------------------------------------------------------------------------
         | Password Reset
         |--------------------------------------------------------------------------
@@ -37,72 +42,80 @@ Route::prefix('v1')->group(function () {
 
         Route::post(
             '/forgot-password',
-            [
-                AuthController::class,
-                'forgotPassword',
-            ]
+            [AuthController::class, 'forgotPassword']
         )->middleware('throttle:3,1');
 
         Route::post(
             '/reset-password',
-            [
-                AuthController::class,
-                'resetPassword',
-            ]
+            [AuthController::class, 'resetPassword']
         )->middleware('throttle:5,1');
 
-        Route::middleware('auth:sanctum')->group(
-            function () {
+        /*
+        |--------------------------------------------------------------------------
+        | Authenticated Auth Routes
+        |--------------------------------------------------------------------------
+        */
 
-                Route::get(
-                    '/me',
-                    [AuthController::class, 'me']
-                );
+        Route::middleware(
+            'auth:sanctum'
+        )->group(function () {
 
-                Route::post(
-                    '/logout',
-                    [AuthController::class, 'logout']
-                );
+            Route::get(
+                '/me',
+                [AuthController::class, 'me']
+            );
 
-                 /*
-                |--------------------------------------------------------------------------
-                | Disput Type
-                |--------------------------------------------------------------------------
-                */
-                Route::get(
-                    '/dispute-types',
-                    [DisputeTypeController::class, 'index']
-                );
+            Route::post(
+                '/logout',
+                [AuthController::class, 'logout']
+            );
+        });
+    });
 
-                Route::post(
-                    '/dispute-types',
-                    [DisputeTypeController::class, 'store']
-                );
+    /*
+    |--------------------------------------------------------------------------
+    | Protected Application Routes
+    |--------------------------------------------------------------------------
+    */
 
-                Route::get(
-                    '/dispute-types/{disputeType}',
-                    [DisputeTypeController::class, 'show']
-                );
+    Route::middleware(
+        'auth:sanctum'
+    )->group(function () {
 
-                Route::put(
-                    '/dispute-types/{disputeType}',
-                    [DisputeTypeController::class, 'update']
-                );
+        /*
+        |--------------------------------------------------------------------------
+        | Dispute Types
+        |--------------------------------------------------------------------------
+        */
 
-                Route::patch(
-                    '/dispute-types/{disputeType}',
-                    [DisputeTypeController::class, 'update']
-                );
+        Route::get(
+            '/dispute-types',
+            [DisputeTypeController::class, 'index']
+        );
 
-                Route::delete(
-                    '/dispute-types/{disputeType}',
-                    [DisputeTypeController::class, 'destroy']
-                );
+        Route::post(
+            '/dispute-types',
+            [DisputeTypeController::class, 'store']
+        );
 
+        Route::get(
+            '/dispute-types/{disputeType}',
+            [DisputeTypeController::class, 'show']
+        );
 
+        Route::put(
+            '/dispute-types/{disputeType}',
+            [DisputeTypeController::class, 'update']
+        );
 
+        Route::patch(
+            '/dispute-types/{disputeType}',
+            [DisputeTypeController::class, 'update']
+        );
 
-            }
+        Route::delete(
+            '/dispute-types/{disputeType}',
+            [DisputeTypeController::class, 'destroy']
         );
     });
 });

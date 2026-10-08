@@ -1,38 +1,38 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\DisputeType;
+namespace App\Http\Controllers\Api\V1\CaseNature;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\DisputeType\StoreDisputeTypeRequest;
-use App\Http\Requests\DisputeType\UpdateDisputeTypeRequest;
-use App\Http\Resources\DisputeTypeResource;
-use App\Models\DisputeType;
-use App\Services\DisputeType\DisputeTypeService;
+use App\Http\Requests\CaseNature\StoreCaseNatureRequest;
+use App\Http\Requests\CaseNature\UpdateCaseNatureRequest;
+use App\Http\Resources\CaseNatureResource;
+use App\Models\CaseNature;
+use App\Services\CaseNature\CaseNatureService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
-class DisputeTypeController extends Controller
+class CaseNatureController extends Controller
 {
     use ApiResponse;
 
     public function __construct(
-        private readonly DisputeTypeService $disputeTypeService
+        private readonly CaseNatureService $caseNatureService
     ) {
     }
 
     /*
     |--------------------------------------------------------------------------
-    | List Dispute Types
+    | List Case Natures
     |--------------------------------------------------------------------------
     */
 
     #[OA\Get(
-        path: '/api/v1/dispute-types',
-        summary: 'Get dispute types',
-        description: 'Returns a paginated list of dispute types with optional search and status filtering.',
-        tags: ['Dispute Types'],
+        path: '/api/v1/case-natures',
+        summary: 'Get case natures',
+        description: 'Returns a paginated list of case natures with optional search and status filtering.',
+        tags: ['Case Natures'],
         security: [
             [
                 'bearerAuth' => [],
@@ -43,11 +43,11 @@ class DisputeTypeController extends Controller
                 name: 'search',
                 in: 'query',
                 required: false,
-                description: 'Search by English/Bangla name or description.',
+                description: 'Search by case nature name.',
                 schema: new OA\Schema(
                     type: 'string'
                 ),
-                example: 'wage'
+                example: 'By Government'
             ),
 
             new OA\Parameter(
@@ -70,14 +70,15 @@ class DisputeTypeController extends Controller
                     type: 'integer',
                     minimum: 1,
                     maximum: 100,
-                    default: 15
-                )
+                    default: 10
+                ),
+                example: 10
             ),
         ],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Dispute types retrieved successfully'
+                description: 'Case natures retrieved successfully'
             ),
 
             new OA\Response(
@@ -86,47 +87,44 @@ class DisputeTypeController extends Controller
             ),
         ]
     )]
-    public function index(
-        Request $request
-    ): JsonResponse {
-        $disputeTypes = $this
-            ->disputeTypeService
-            ->getAll(
-                $request->only([
-                    'search',
-                    'status',
-                    'per_page',
-                ])
-            );
+    public function index(Request $request): JsonResponse
+    {
+        $caseNatures = $this->caseNatureService->getAll(
+            $request->only([
+                'search',
+                'status',
+                'per_page',
+            ])
+        );
 
         return $this->successResponse(
             [
-                'items' => DisputeTypeResource::collection(
-                    $disputeTypes->items()
+                'items' => CaseNatureResource::collection(
+                    $caseNatures->items()
                 ),
 
                 'pagination' => [
-                    'current_page' => $disputeTypes->currentPage(),
-                    'last_page' => $disputeTypes->lastPage(),
-                    'per_page' => $disputeTypes->perPage(),
-                    'total' => $disputeTypes->total(),
+                    'current_page' => $caseNatures->currentPage(),
+                    'last_page' => $caseNatures->lastPage(),
+                    'per_page' => $caseNatures->perPage(),
+                    'total' => $caseNatures->total(),
                 ],
             ],
-            'Dispute types retrieved successfully.'
+            'Case natures retrieved successfully.'
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Create Dispute Type
+    | Create Case Nature
     |--------------------------------------------------------------------------
     */
 
     #[OA\Post(
-        path: '/api/v1/dispute-types',
-        summary: 'Create dispute type',
-        description: 'Create a new dispute type.',
-        tags: ['Dispute Types'],
+        path: '/api/v1/case-natures',
+        summary: 'Create case nature',
+        description: 'Create a new case nature.',
+        tags: ['Case Natures'],
         security: [
             [
                 'bearerAuth' => [],
@@ -137,40 +135,27 @@ class DisputeTypeController extends Controller
             content: new OA\JsonContent(
                 required: [
                     'name_en',
-                    'name_bn',
                 ],
                 properties: [
                     new OA\Property(
                         property: 'name_en',
                         type: 'string',
-                        maxLength: 150,
-                        example: 'Wage Dispute'
+                        maxLength: 255,
+                        example: 'By Government'
                     ),
 
                     new OA\Property(
                         property: 'name_bn',
                         type: 'string',
-                        maxLength: 150,
-                        example: 'মজুরি বিরোধ'
-                    ),
-
-                    new OA\Property(
-                        property: 'description_en',
-                        type: 'string',
                         nullable: true,
-                        example: 'Disputes related to wages and salary payments.'
-                    ),
-
-                    new OA\Property(
-                        property: 'description_bn',
-                        type: 'string',
-                        nullable: true,
-                        example: 'মজুরি ও বেতন পরিশোধ সংক্রান্ত বিরোধ।'
+                        maxLength: 255,
+                        example: 'সরকার কর্তৃক'
                     ),
 
                     new OA\Property(
                         property: 'status',
                         type: 'boolean',
+                        default: true,
                         example: true
                     ),
                 ]
@@ -179,7 +164,7 @@ class DisputeTypeController extends Controller
         responses: [
             new OA\Response(
                 response: 201,
-                description: 'Dispute type created successfully'
+                description: 'Case nature created successfully'
             ),
 
             new OA\Response(
@@ -194,34 +179,30 @@ class DisputeTypeController extends Controller
         ]
     )]
     public function store(
-        StoreDisputeTypeRequest $request
+        StoreCaseNatureRequest $request
     ): JsonResponse {
-        $disputeType = $this
-            ->disputeTypeService
-            ->create(
-                $request->validated()
-            );
+        $caseNature = $this->caseNatureService->create(
+            $request->validated()
+        );
 
         return $this->successResponse(
-            new DisputeTypeResource(
-                $disputeType
-            ),
-            'Dispute type created successfully.',
+            new CaseNatureResource($caseNature),
+            'Case nature created successfully.',
             201
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Show Dispute Type
+    | Show Case Nature
     |--------------------------------------------------------------------------
     */
 
     #[OA\Get(
-        path: '/api/v1/dispute-types/{disputeType}',
-        summary: 'Get dispute type',
-        description: 'Returns a single dispute type by ID.',
-        tags: ['Dispute Types'],
+        path: '/api/v1/case-natures/{caseNature}',
+        summary: 'Get case nature',
+        description: 'Returns a single case nature by ID.',
+        tags: ['Case Natures'],
         security: [
             [
                 'bearerAuth' => [],
@@ -229,10 +210,10 @@ class DisputeTypeController extends Controller
         ],
         parameters: [
             new OA\Parameter(
-                name: 'disputeType',
+                name: 'caseNature',
                 in: 'path',
                 required: true,
-                description: 'Dispute type ID.',
+                description: 'Case nature ID.',
                 schema: new OA\Schema(
                     type: 'integer'
                 ),
@@ -242,7 +223,7 @@ class DisputeTypeController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Dispute type retrieved successfully'
+                description: 'Case nature retrieved successfully'
             ),
 
             new OA\Response(
@@ -252,32 +233,30 @@ class DisputeTypeController extends Controller
 
             new OA\Response(
                 response: 404,
-                description: 'Dispute type not found'
+                description: 'Case nature not found'
             ),
         ]
     )]
     public function show(
-        DisputeType $disputeType
+        CaseNature $caseNature
     ): JsonResponse {
         return $this->successResponse(
-            new DisputeTypeResource(
-                $disputeType
-            ),
-            'Dispute type retrieved successfully.'
+            new CaseNatureResource($caseNature),
+            'Case nature retrieved successfully.'
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Update Dispute Type
+    | Update Case Nature
     |--------------------------------------------------------------------------
     */
 
     #[OA\Put(
-        path: '/api/v1/dispute-types/{disputeType}',
-        summary: 'Update dispute type',
-        description: 'Update an existing dispute type.',
-        tags: ['Dispute Types'],
+        path: '/api/v1/case-natures/{caseNature}',
+        summary: 'Update case nature',
+        description: 'Update an existing case nature.',
+        tags: ['Case Natures'],
         security: [
             [
                 'bearerAuth' => [],
@@ -285,10 +264,10 @@ class DisputeTypeController extends Controller
         ],
         parameters: [
             new OA\Parameter(
-                name: 'disputeType',
+                name: 'caseNature',
                 in: 'path',
                 required: true,
-                description: 'Dispute type ID.',
+                description: 'Case nature ID.',
                 schema: new OA\Schema(
                     type: 'integer'
                 ),
@@ -302,29 +281,16 @@ class DisputeTypeController extends Controller
                     new OA\Property(
                         property: 'name_en',
                         type: 'string',
-                        maxLength: 150,
-                        example: 'Salary and Wage Dispute'
+                        maxLength: 255,
+                        example: 'By Government'
                     ),
 
                     new OA\Property(
                         property: 'name_bn',
                         type: 'string',
-                        maxLength: 150,
-                        example: 'বেতন ও মজুরি বিরোধ'
-                    ),
-
-                    new OA\Property(
-                        property: 'description_en',
-                        type: 'string',
                         nullable: true,
-                        example: 'Disputes related to salary and wage payments.'
-                    ),
-
-                    new OA\Property(
-                        property: 'description_bn',
-                        type: 'string',
-                        nullable: true,
-                        example: 'বেতন ও মজুরি পরিশোধ সংক্রান্ত বিরোধ।'
+                        maxLength: 255,
+                        example: 'সরকার কর্তৃক'
                     ),
 
                     new OA\Property(
@@ -338,7 +304,7 @@ class DisputeTypeController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Dispute type updated successfully'
+                description: 'Case nature updated successfully'
             ),
 
             new OA\Response(
@@ -348,7 +314,7 @@ class DisputeTypeController extends Controller
 
             new OA\Response(
                 response: 404,
-                description: 'Dispute type not found'
+                description: 'Case nature not found'
             ),
 
             new OA\Response(
@@ -358,35 +324,31 @@ class DisputeTypeController extends Controller
         ]
     )]
     public function update(
-        UpdateDisputeTypeRequest $request,
-        DisputeType $disputeType
+        UpdateCaseNatureRequest $request,
+        CaseNature $caseNature
     ): JsonResponse {
-        $disputeType = $this
-            ->disputeTypeService
-            ->update(
-                $disputeType,
-                $request->validated()
-            );
+        $caseNature = $this->caseNatureService->update(
+            $caseNature,
+            $request->validated()
+        );
 
         return $this->successResponse(
-            new DisputeTypeResource(
-                $disputeType
-            ),
-            'Dispute type updated successfully.'
+            new CaseNatureResource($caseNature),
+            'Case nature updated successfully.'
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Delete Dispute Type
+    | Delete Case Nature
     |--------------------------------------------------------------------------
     */
 
     #[OA\Delete(
-        path: '/api/v1/dispute-types/{disputeType}',
-        summary: 'Delete dispute type',
-        description: 'Delete an existing dispute type.',
-        tags: ['Dispute Types'],
+        path: '/api/v1/case-natures/{caseNature}',
+        summary: 'Delete case nature',
+        description: 'Delete an existing case nature.',
+        tags: ['Case Natures'],
         security: [
             [
                 'bearerAuth' => [],
@@ -394,10 +356,10 @@ class DisputeTypeController extends Controller
         ],
         parameters: [
             new OA\Parameter(
-                name: 'disputeType',
+                name: 'caseNature',
                 in: 'path',
                 required: true,
-                description: 'Dispute type ID.',
+                description: 'Case nature ID.',
                 schema: new OA\Schema(
                     type: 'integer'
                 ),
@@ -407,7 +369,7 @@ class DisputeTypeController extends Controller
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Dispute type deleted successfully'
+                description: 'Case nature deleted successfully'
             ),
 
             new OA\Response(
@@ -417,20 +379,18 @@ class DisputeTypeController extends Controller
 
             new OA\Response(
                 response: 404,
-                description: 'Dispute type not found'
+                description: 'Case nature not found'
             ),
         ]
     )]
     public function destroy(
-        DisputeType $disputeType
+        CaseNature $caseNature
     ): JsonResponse {
-        $this
-            ->disputeTypeService
-            ->delete($disputeType);
+        $this->caseNatureService->delete($caseNature);
 
         return $this->successResponse(
             null,
-            'Dispute type deleted successfully.'
+            'Case nature deleted successfully.'
         );
     }
 }
